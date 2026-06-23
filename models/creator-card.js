@@ -23,7 +23,7 @@ const schemaConfig = {
   _id: { type: SchemaTypes.ULID, required: true },
   title: { type: SchemaTypes.String },
   description: { type: SchemaTypes.String },
-  slug: { type: SchemaTypes.String, unique: true, index: true },
+  slug: { type: SchemaTypes.String },
   creator_reference: { type: SchemaTypes.String, index: true },
   links: { type: SchemaTypes.Mixed },
   service_rates: { type: SchemaTypes.Mixed },
@@ -36,6 +36,11 @@ const schemaConfig = {
 };
 
 const modelSchema = new ModelSchema(schemaConfig, { collection: modelName });
+
+// Slug uniqueness applies only to live cards. A soft-deleted card (deleted !== null) is
+// excluded from this index, so its slug becomes reusable — matching the service's
+// findOne({ slug, deleted: null }) lookup and the spec treating deleted cards as non-existent.
+modelSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { deleted: null } });
 
 /** @type {CreatorCard} */
 module.exports = DatabaseModel.model(modelName, modelSchema);
