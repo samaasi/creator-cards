@@ -10,6 +10,8 @@ const createSpec = `root {
   description? string<maxLength:500>
   slug? string<minLength:5|maxLength:50>
   creator_reference string<length:20>
+  links? any
+  service_rates? any
   status string(draft|published)
   access_type? string(public|private)
   access_code? string<length:6>
