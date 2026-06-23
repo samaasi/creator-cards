@@ -1,7 +1,7 @@
 const validator = require('@app-core/validator');
 const { throwAppError, ERROR_CODE } = require('@app-core/errors');
 const { appLogger } = require('@app-core/logger');
-const { randomBytes } = require('@app-core/randomness');
+const { randomNumbers } = require('@app-core/randomness');
 const Repository = require('@app/repository/creator-card');
 const { CreatorCardMessages } = require('@app/messages');
 
@@ -26,8 +26,12 @@ function buildSlugFromTitle(title) {
     .replace(/[^a-z0-9\-_]/g, '');
 }
 
+const SLUG_SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
 function appendRandomSuffix(base) {
-  const suffix = randomBytes(3);
+  const suffix = Array.from({ length: 6 }, () =>
+    SLUG_SUFFIX_ALPHABET.charAt(randomNumbers(0, SLUG_SUFFIX_ALPHABET.length))
+  ).join('');
   return `${base}-${suffix}`;
 }
 
@@ -45,11 +49,22 @@ function validateLinks(links) {
     throwAppError('links must be an array', ERROR_CODE.INVLDDATA);
   }
   links.forEach((link, i) => {
-    if (!link.title || typeof link.title !== 'string' || link.title.length < 1 || link.title.length > 100) {
-      throwAppError(`links[${i}].title must be a string between 1 and 100 characters`, ERROR_CODE.INVLDDATA);
+    if (
+      !link.title ||
+      typeof link.title !== 'string' ||
+      link.title.length < 1 ||
+      link.title.length > 100
+    ) {
+      throwAppError(
+        `links[${i}].title must be a string between 1 and 100 characters`,
+        ERROR_CODE.INVLDDATA
+      );
     }
     if (!link.url || typeof link.url !== 'string' || link.url.length > 200) {
-      throwAppError(`links[${i}].url must be a string with max 200 characters`, ERROR_CODE.INVLDDATA);
+      throwAppError(
+        `links[${i}].url must be a string with max 200 characters`,
+        ERROR_CODE.INVLDDATA
+      );
     }
     if (!link.url.startsWith('http://') && !link.url.startsWith('https://')) {
       throwAppError(`links[${i}].url must start with http:// or https://`, ERROR_CODE.INVLDDATA);
@@ -60,20 +75,40 @@ function validateLinks(links) {
 function validateServiceRates(serviceRates) {
   const validCurrencies = ['NGN', 'USD', 'GBP', 'GHS'];
   if (!validCurrencies.includes(serviceRates.currency)) {
-    throwAppError(`service_rates.currency must be one of: ${validCurrencies.join(', ')}`, ERROR_CODE.INVLDDATA);
+    throwAppError(
+      `service_rates.currency must be one of: ${validCurrencies.join(', ')}`,
+      ERROR_CODE.INVLDDATA
+    );
   }
   if (!Array.isArray(serviceRates.rates) || serviceRates.rates.length === 0) {
     throwAppError('service_rates.rates must be a non-empty array', ERROR_CODE.INVLDDATA);
   }
   serviceRates.rates.forEach((rate, i) => {
-    if (!rate.name || typeof rate.name !== 'string' || rate.name.length < 3 || rate.name.length > 100) {
-      throwAppError(`service_rates.rates[${i}].name must be a string between 3 and 100 characters`, ERROR_CODE.INVLDDATA);
+    if (
+      !rate.name ||
+      typeof rate.name !== 'string' ||
+      rate.name.length < 3 ||
+      rate.name.length > 100
+    ) {
+      throwAppError(
+        `service_rates.rates[${i}].name must be a string between 3 and 100 characters`,
+        ERROR_CODE.INVLDDATA
+      );
     }
-    if (rate.description !== undefined && (typeof rate.description !== 'string' || rate.description.length > 250)) {
-      throwAppError(`service_rates.rates[${i}].description must be a string with max 250 characters`, ERROR_CODE.INVLDDATA);
+    if (
+      rate.description !== undefined &&
+      (typeof rate.description !== 'string' || rate.description.length > 250)
+    ) {
+      throwAppError(
+        `service_rates.rates[${i}].description must be a string with max 250 characters`,
+        ERROR_CODE.INVLDDATA
+      );
     }
     if (!Number.isInteger(rate.amount) || rate.amount < 1) {
-      throwAppError(`service_rates.rates[${i}].amount must be a positive integer`, ERROR_CODE.INVLDDATA);
+      throwAppError(
+        `service_rates.rates[${i}].amount must be a positive integer`,
+        ERROR_CODE.INVLDDATA
+      );
     }
   });
 }
@@ -109,8 +144,8 @@ async function createCreatorCard(serviceData, options = {}) {
       throwAppError(CreatorCardMessages.ACCESS_CODE_INVALID_FORMAT, ERROR_CODE.INVLDDATA);
     }
 
-    let slug = data.slug;
-    let slugWasProvided = !!slug;
+    let { slug } = data;
+    const slugWasProvided = !!slug;
 
     if (!slugWasProvided) {
       slug = buildSlugFromTitle(data.title);
@@ -122,7 +157,7 @@ async function createCreatorCard(serviceData, options = {}) {
       if (slugWasProvided) {
         throwAppError(CreatorCardMessages.SLUG_TAKEN, ERROR_CODE.SL02);
       }
-      
+
       slug = appendRandomSuffix(slug);
       const suffixConflict = await Repository.findOne({ query: { slug, deleted: null } });
       if (suffixConflict) {
