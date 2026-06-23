@@ -13,7 +13,9 @@ createConnection({
   uri: process.env.MONGODB_URI,
 });
 
-createQueue();
+if (process.env.REDIS_URL) {
+  createQueue();
+}
 
 const server = createServer({
   port: process.env.PORT,
@@ -24,6 +26,9 @@ const server = createServer({
 const ENDPOINT_CONFIGS = [
   {
     path: './endpoints/onboarding/',
+  },
+  {
+    path: './endpoints/creator-cards/',
   },
 ];
 
