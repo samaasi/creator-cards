@@ -575,13 +575,13 @@ describe('POST /creator-cards', () => {
     });
 
     describe('appendRandomSuffix', () => {
-      it('produces a slug matching {base}-{6 hex chars} when base is too short', async () => {
+      it('produces a slug matching {base}-{6 alphanumeric chars} when base is too short', async () => {
         cfg({ method: 'findOne', mockNull: true });
         const res = await server.post('/creator-cards', {
           body: { ...BASE, title: 'Hi!' },
         });
         expect(res.statusCode).to.equal(200);
-        expect(res.data.data.slug).to.match(/^.+-[0-9a-f]{3}$/);
+        expect(res.data.data.slug).to.match(/^.+-[a-z0-9]{6}$/);
       });
     });
   });
