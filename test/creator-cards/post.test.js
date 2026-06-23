@@ -518,4 +518,71 @@ describe('POST /creator-cards', () => {
       expect(res.data.data.updated).to.be.a('number');
     });
   });
+
+  describe('slug helper behavior', () => {
+    describe('buildSlugFromTitle', () => {
+      it('produces only lowercase letters, digits, hyphens, and underscores', async () => {
+        cfg({ method: 'findOne', mockNull: true });
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, title: 'Café & Friends! 2024' },
+        });
+        expect(res.statusCode).to.equal(200);
+        expect(res.data.data.slug).to.match(/^[a-z0-9\-_]+$/);
+      });
+
+      it('collapses multiple consecutive spaces into a single hyphen', async () => {
+        cfg({ method: 'findOne', mockNull: true });
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, title: 'Hello  World' },
+        });
+        expect(res.statusCode).to.equal(200);
+        expect(res.data.data.slug).to.equal('hello-world');
+      });
+
+      it('preserves underscores from the title in the generated slug', async () => {
+        cfg({ method: 'findOne', mockNull: true });
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, title: 'hello_world_slug' },
+        });
+        expect(res.statusCode).to.equal(200);
+        expect(res.data.data.slug).to.equal('hello_world_slug');
+      });
+    });
+
+    describe('isAlphanumeric (access_code character set)', () => {
+      it('accepts an access_code of all uppercase letters', async () => {
+        cfg({ method: 'findOne', mockNull: true });
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, access_type: 'private', access_code: 'ABCDEF' },
+        });
+        expect(res.statusCode).to.equal(200);
+      });
+
+      it('accepts an access_code of all lowercase letters', async () => {
+        cfg({ method: 'findOne', mockNull: true });
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, access_type: 'private', access_code: 'abcdef' },
+        });
+        expect(res.statusCode).to.equal(200);
+      });
+
+      it('rejects an access_code containing an underscore (not in [a-zA-Z0-9])', async () => {
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, access_type: 'private', access_code: 'AB_2C3' },
+        });
+        expect(res.statusCode).to.equal(400);
+      });
+    });
+
+    describe('appendRandomSuffix', () => {
+      it('produces a slug matching {base}-{6 hex chars} when base is too short', async () => {
+        cfg({ method: 'findOne', mockNull: true });
+        const res = await server.post('/creator-cards', {
+          body: { ...BASE, title: 'Hi!' },
+        });
+        expect(res.statusCode).to.equal(200);
+        expect(res.data.data.slug).to.match(/^.+-[0-9a-f]{3}$/);
+      });
+    });
+  });
 });
