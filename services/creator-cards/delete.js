@@ -35,7 +35,9 @@ async function deleteCreatorCard(serviceData, options = {}) {
       updateValues: { deleted: deletedAt },
     });
 
-    response = serializeCard({ ...card, deleted: deletedAt });
+    const deletedCard = await Repository.findOne({ query: { _id: card._id } });
+
+    response = serializeCard(deletedCard);
 
     if (response.access_type !== 'private') {
       response.access_code = null;
