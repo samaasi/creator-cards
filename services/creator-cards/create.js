@@ -124,6 +124,10 @@ async function createCreatorCard(serviceData, options = {}) {
       }
       
       slug = appendRandomSuffix(slug);
+      const suffixConflict = await Repository.findOne({ query: { slug, deleted: null } });
+      if (suffixConflict) {
+        slug = appendRandomSuffix(buildSlugFromTitle(data.title));
+      }
     } else if (!slugWasProvided && slug.length < 5) {
       slug = appendRandomSuffix(slug);
     }
