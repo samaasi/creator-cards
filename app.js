@@ -45,7 +45,7 @@ function logEndpointMetaData(endpointConfigs) {
     dirs.forEach((file) => {
       const handler = require(`${basePath}${file}`);
 
-      if (!EXEMPTED_ENDPOINTS_REGEX.test(basePath) && handler.middlewares?.length) {
+      if (!EXEMPTED_ENDPOINTS_REGEX.test(basePath) && Array.isArray(handler.middlewares)) {
         const entry = { method: handler.method, endpoint: handler.path };
         entry.name = file.replaceAll('-', ' ').replace('.js', '');
         entry.display_name = `can ${entry.name}`;
